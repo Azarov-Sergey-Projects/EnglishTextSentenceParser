@@ -4,6 +4,7 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <algorithm>
 
 enum TokenType
 {
@@ -13,6 +14,21 @@ enum TokenType
 	TOKEN_ASTERISK
 };
 
+bool IsWord(const std::string& str)
+{
+	if (str.empty())
+	{
+		return false;
+	}
+	for (char c : str)
+	{
+		if (c == ' ' || c == '\t' || c == '\0')
+		{
+			return false;
+		}
+	}
+	return true;
+}
 
 struct CToken
 {
@@ -20,13 +36,6 @@ struct CToken
     TokenType m_tokenType;
     int position;
 };
-
-
-std::string FindSubstr(const std::string& strIn, size_t iPos)
-{
-
-}
-
 
 int main(int argc, char* argv[])
 {
@@ -43,35 +52,60 @@ int main(int argc, char* argv[])
 
 	std::vector<CToken> tokens;
     std::string strInput = argv[1];
-    int iPosStart = 0;
-    int iPosEnd = 0;
+    size_t iPosStart = 0;
+    size_t iPosEnd = 0;
     int iCount = 1;
 
-    while (strInput[iPosStart] != '\0')
-    {
-        if (strInput[iPosStart] == ' ' || strInput[iPosStart] == '\t')
-        {
-			tokens.push_back(CToken{strInput.substr(iPosEnd, iPosStart - iPosEnd), TOKEN_WORD, iCount});
-            iCount++;
-            iPosEnd = iPosStart + 1;
-        }
-		if (strInput[iPosStart + 1] == '\0')
+	if (strInput.find_first_not_of(" \t \n") == std::string::npos)
+	{
+		std::cout << "Input string is empty or contains only whitespace, exiting" << std::endl;
+		return -1;
+	}
+	else
+	{
+		iPosStart = strInput.find_first_not_of(" \t \n");
+	}
+	while (iPosStart < strInput.length())
+	{
+		iPosEnd = strInput.find_first_of(" \t \n", iPosStart);
+		if (iPosEnd == std::string::npos)
 		{
-			tokens.push_back(CToken{strInput.substr(iPosEnd, iPosStart - iPosEnd + 1), TOKEN_WORD, iCount});
+			iPosEnd = strInput.length();
 		}
-        iPosStart++;
-    }
-    /*for (int i = 0; i < tokens.size(); i++)
-    {
-        if (tokens[i].m_tokenText.find('\'') != std::string::npos)
-        {
+		std::string tokenText = strInput.substr(iPosStart, iPosEnd - iPosStart);
+		TokenType tokenType;
+		if (IsWord(tokenText))
+		{
+			tokenType = TOKEN_WORD;
+		}
+		else if (tokenText == "*")
+		{
+			tokenType = TOKEN_ASTERISK;
+		}
+		else if (std::all_of(tokenText.begin(), tokenText.end(), ::isdigit))
+		{
+			tokenType = TOKEN_NUMBER;
+		}
+		else
+		{
+			tokenType = TOKEN_PUNCTUATION;
+		}
+		CToken token{ tokenText, tokenType, iCount };
+		tokens.push_back(token);
+		iCount++;
+		size_t next = strInput.find_first_not_of(" \t \n", iPosEnd);
+		if (next == std::string::npos)
+		{
+			break;
+		}
+		iPosStart = next;
+	}
+	for (const auto& token : tokens)
+	{
+		std::cout << "Token: " << token.m_tokenText << ", Type: " << token.m_tokenType << ", Position: " << token.position << std::endl;
+	}
+	return 0;
 
-        }
-    }*/
-    for (int i = 0; i < tokens.size(); i++)
-    {
-        std::cout << "Token: " << tokens[i].m_tokenText << " Type: " << tokens[i].m_tokenType << " Position: " << tokens[i].position << std::endl;
-    }
 }
 
 // Run program: Ctrl + F5 or Debug > Start Without Debugging menu
